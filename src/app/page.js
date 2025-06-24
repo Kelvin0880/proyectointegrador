@@ -8,7 +8,7 @@ export default function Home() {
       {/* Barra de navegación */}
       <nav className="bg-green-700 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 {/* Logo de la UNPHU (puedes reemplazarlo con la imagen real) */}

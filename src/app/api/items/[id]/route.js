@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { query } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 // Obtener un item específico
 export async function GET(req, context) {
@@ -169,18 +170,24 @@ export async function PATCH(req, context) {
     updateFields.push('updated_at = NOW()');
     
     // Ejecutar la actualización
-    const updateQuery = `UPDATE items SET ${updateFields.join(', ')} WHERE id = ?`;
-    updateValues.push(id);
+    await query(
+      `UPDATE items SET ${updateFields.join(', ')} WHERE id = ?`,
+      [...updateValues, id]
+    );
     
-    console.log('API PATCH: Ejecutando actualización:', updateQuery, updateValues);
+    // Revalidar las rutas afectadas
+    revalidatePath('/dashboard/admin/inventario');
+    revalidatePath(`/dashboard/admin/inventario/editar/${id}`);
+    revalidatePath('/dashboard');
     
-    await query(updateQuery, updateValues);
-    
-    return NextResponse.json({ message: 'Item actualizado correctamente' });
+    return NextResponse.json({ 
+      message: 'Item actualizado correctamente',
+      item: { id, ...itemData }
+    });
   } catch (error) {
     console.error('Error al actualizar item:', error);
     return NextResponse.json(
-      { error: 'Error al actualizar item: ' + error.message },
+      { error: 'Error al actualizar item' },
       { status: 500 }
     );
   }
@@ -265,7 +272,14 @@ export async function DELETE(req, context) {
     // Si no tiene solicitudes, eliminamos el item completamente
     await query('DELETE FROM items WHERE id = ?', [id]);
     
-    return NextResponse.json({ message: 'Item eliminado correctamente' });
+    // Revalidar las rutas afectadas
+    revalidatePath('/dashboard/admin/inventario');
+    revalidatePath('/dashboard');
+    
+    return NextResponse.json({ 
+      message: 'Item eliminado correctamente',
+      status: softDelete ? 'soft_delete' : 'delete'
+    });
   } catch (error) {
     console.error('Error al eliminar item:', error);
     return NextResponse.json(

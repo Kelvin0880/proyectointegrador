@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Paleta de colores principales: verde, rojo y blanco (bandera mexicana) */
+  --color-primary: #009b3a; /* Verde principal más vibrante */
+  --color-primary-hover: #00802e; /* Verde más oscuro para hover */
+  --color-secondary: #ce1126; /* Rojo vibrante */
+  --color-secondary-hover: #b00e20; /* Rojo más oscuro para hover */
+  --color-light: #ffffff; /* Blanco para fondos */
+  --color-light-accent: #f3f9f3; /* Blanco con tinte verde muy suave */
+  --color-text-primary: #ffffff; /* Texto sobre color primario */
+  --color-text-dark: #111827; /* Texto oscuro principal - más legible */
+  --color-accent: #f8f9fa; /* Color de acento para fondos secundarios */
+  --color-border: #e5e7eb; /* Color para bordes */
+  --color-success: #10b981; /* Verde para estados exitosos */
+  --color-warning: #f59e0b; /* Amarillo para estados de advertencia */
+  --color-error: #ef4444; /* Rojo para estados de error */
+  --color-info: #3b82f6; /* Azul para información */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --radius-sm: 0.125rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
 }
 
 @theme inline {
@@ -20,7 +44,98 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-accent);
+  color: var(--color-text-dark);
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Estilos de botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+  border: none;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-hover);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-light-accent);
+}
+
+/* Estilos para tarjetas */
+.card {
+  background-color: var(--color-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Estilos para navegación */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  transition: all 0.15s ease;
+  border-radius: var(--radius);
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background-color: rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+}
+
+/* Animaciones para elementos interactivos */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

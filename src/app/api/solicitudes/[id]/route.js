@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { query } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 // Obtener una solicitud específica
 export async function GET(req, context) {
@@ -173,6 +174,12 @@ export async function PATCH(req, context) {
       }
     }
     
+    // Revalidar las rutas para forzar la actualización de los datos en el cliente
+    revalidatePath('/dashboard/solicitudes');
+    revalidatePath(`/dashboard/solicitudes/${id}`);
+    revalidatePath('/dashboard/admin/solicitudes');
+    revalidatePath('/dashboard');
+    
     return NextResponse.json({ message: 'Solicitud actualizada correctamente' });
   } catch (error) {
     console.error('Error al actualizar solicitud:', error);
@@ -264,6 +271,11 @@ export async function DELETE(req, context) {
     
     // Eliminar la solicitud
     await query('DELETE FROM solicitudes WHERE id = ?', [id]);
+    
+    // Revalidar las rutas afectadas
+    revalidatePath('/dashboard/solicitudes');
+    revalidatePath('/dashboard/admin/solicitudes');
+    revalidatePath('/dashboard');
     
     return NextResponse.json({ message: 'Solicitud eliminada correctamente' });
   } catch (error) {
