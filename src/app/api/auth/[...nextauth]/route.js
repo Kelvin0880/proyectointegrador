@@ -1,7 +1,7 @@
 // src/app/api/auth/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 
 export const authOptions = {
@@ -36,17 +36,7 @@ export const authOptions = {
           const user = users[0];
           console.log(`Usuario encontrado: ${user.matricula}, rol: ${user.rol}`);
           
-          // Bypass de seguridad para el administrador (temporal)
-          let isPasswordValid = false;
-          
-          if (user.matricula === 'superadmin' && credentials.password === 'admin123') {
-            // Para el superadmin, comparamos directamente con la contraseña en texto plano
-            console.log('Usando verificación directa para superadmin');
-            isPasswordValid = true;
-          } else {
-            // Para usuarios normales, usamos la comparación bcrypt normal
-            isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-          }
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           
           console.log(`Contraseña válida: ${isPasswordValid}`);
           
@@ -107,13 +97,13 @@ export const authOptions = {
   },
   pages: {
     signIn: '/auth/login',
-    error: '/auth/error',
+    error: '/auth/login',
   },
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 días
   },
-  debug: true,
+  debug: process.env.NODE_ENV === 'development',
   secret: process.env.NEXTAUTH_SECRET || 'unphuInventarioSecretKey',
 };
 

@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AdminSolicitudModal from '../../../components/AdminSolicitudModal/AdminSolicitudModal';
 
-export default function AdminSolicitudes() {
+function AdminSolicitudesContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -366,5 +367,13 @@ export default function AdminSolicitudes() {
         onUpdateSuccess={handleUpdateSuccess}
       />
     </div>
+  );
+}
+
+export default function AdminSolicitudes() {
+  return (
+    <Suspense fallback={null}>
+      <AdminSolicitudesContent />
+    </Suspense>
   );
 }

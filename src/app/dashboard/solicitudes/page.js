@@ -1,11 +1,12 @@
 // src/app/dashboard/solicitudes/page.js
 'use client';
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import SolicitudModal from '../../components/SolicitudModal/SolicitudModal';
 
-export default function Solicitudes() {
+function SolicitudesContent() {
   const searchParams = useSearchParams();
   const estadoFilter = searchParams.get('estado') || '';
   
@@ -310,5 +311,13 @@ export default function Solicitudes() {
         onDelete={handleDeleteSolicitud}
       />
     </div>
+  );
+}
+
+export default function Solicitudes() {
+  return (
+    <Suspense fallback={null}>
+      <SolicitudesContent />
+    </Suspense>
   );
 }

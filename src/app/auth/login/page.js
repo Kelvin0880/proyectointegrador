@@ -1,11 +1,11 @@
 'use client';
 // src/app/auth/login/page.js
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function Login() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registrationSuccess = searchParams.get('registered') === 'true';
@@ -100,7 +100,7 @@ export default function Login() {
                   @unphu.edu.do
                 </span>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Ingresa solo tu matrícula, por ejemplo: "lc22-1392"</p>
+              <p className="mt-1 text-xs text-gray-500">Ingresa solo tu matrícula, por ejemplo: &quot;lc22-1392&quot;</p>
             </div>
 
             <div>
@@ -156,5 +156,13 @@ export default function Login() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

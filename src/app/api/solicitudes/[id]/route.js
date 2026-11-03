@@ -1,13 +1,13 @@
 // src/app/api/solicitudes/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 // Obtener una solicitud específica
 export async function GET(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session) {
       return NextResponse.json(
@@ -116,7 +116,7 @@ export async function GET(req, context) {
 // Actualizar una solicitud (solo admin)
 export async function PATCH(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session || (
       session.user.role !== 'admin' && 
@@ -148,30 +148,52 @@ export async function PATCH(req, context) {
       );
     }
     
+    const ESTADOS_VALIDOS = ['Pendiente', 'Aprobada', 'Rechazada', 'Finalizada'];
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+      return NextResponse.json(
+        { error: 'Estado no válido' },
+        { status: 400 }
+      );
+    }
+
+    const solicitud = solicitudes[0];
+    const estabaAprobada = solicitud.estado === 'Aprobada';
+    const quedaAprobada = estado === 'Aprobada';
+
+    // Al aprobar, verificar que haya unidades disponibles
+    if (quedaAprobada && !estabaAprobada) {
+      const disponibles = await query(
+        'SELECT cantidad_disponible FROM items WHERE id = ?',
+        [solicitud.item_id]
+      );
+      if (disponibles.length === 0 || disponibles[0].cantidad_disponible <= 0) {
+        return NextResponse.json(
+          { error: 'No hay unidades disponibles de este equipo para aprobar la solicitud' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Actualizar la solicitud
     await query(
       'UPDATE solicitudes SET estado = ?, comentarios = ? WHERE id = ?',
       [estado, comentarios || null, id]
     );
-    
-    // Si se aprueba la solicitud, actualizar la cantidad disponible
-    if (estado === 'Aprobada') {
-      const solicitud = solicitudes[0];
+
+    // Al pasar a "Aprobada" se presta una unidad del equipo
+    if (quedaAprobada && !estabaAprobada) {
       await query(
         'UPDATE items SET cantidad_disponible = cantidad_disponible - 1 WHERE id = ?',
         [solicitud.item_id]
       );
     }
-    
-    // Si se finaliza la solicitud (devuelve el ítem), actualizar la cantidad disponible
-    if (estado === 'Finalizada') {
-      const solicitud = solicitudes[0];
-      if (solicitud.estado === 'Aprobada') {
-        await query(
-          'UPDATE items SET cantidad_disponible = cantidad_disponible + 1 WHERE id = ?',
-          [solicitud.item_id]
-        );
-      }
+
+    // Al salir de "Aprobada" (finalizada, rechazada, etc.) se devuelve la unidad
+    if (estabaAprobada && !quedaAprobada) {
+      await query(
+        'UPDATE items SET cantidad_disponible = MIN(cantidad_total, cantidad_disponible + 1) WHERE id = ?',
+        [solicitud.item_id]
+      );
     }
     
     // Revalidar las rutas para forzar la actualización de los datos en el cliente
@@ -193,7 +215,7 @@ export async function PATCH(req, context) {
 // Eliminar una solicitud
 export async function DELETE(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session) {
       return NextResponse.json(
@@ -271,6 +293,14 @@ export async function DELETE(req, context) {
     
     // Eliminar la solicitud
     await query('DELETE FROM solicitudes WHERE id = ?', [id]);
+
+    // Si estaba aprobada, devolver la unidad prestada al inventario
+    if (solicitud.estado === 'Aprobada') {
+      await query(
+        'UPDATE items SET cantidad_disponible = MIN(cantidad_total, cantidad_disponible + 1) WHERE id = ?',
+        [solicitud.item_id]
+      );
+    }
     
     // Revalidar las rutas afectadas
     revalidatePath('/dashboard/solicitudes');

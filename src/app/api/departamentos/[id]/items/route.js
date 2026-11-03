@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 
 // Obtener los items de un departamento específico
 export async function GET(req, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session) {
       return NextResponse.json(
@@ -14,7 +14,7 @@ export async function GET(req, { params }) {
       );
     }
     
-    const { id } = params;
+    const { id } = await params;
     
     // Verificar que el departamento existe
     const departamentos = await query(

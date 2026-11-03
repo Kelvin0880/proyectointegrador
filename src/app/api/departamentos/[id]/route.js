@@ -1,12 +1,12 @@
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 
 // Obtener un departamento específico
 export async function GET(req, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session) {
       return NextResponse.json(
@@ -15,7 +15,7 @@ export async function GET(req, { params }) {
       );
     }
     
-    const { id } = params;
+    const { id } = await params;
     
     const departamentos = await query(
       'SELECT * FROM departamentos WHERE id = ?',
@@ -42,7 +42,7 @@ export async function GET(req, { params }) {
 // Actualizar un departamento (solo admin)
 export async function PATCH(req, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session || session.user.role !== 'admin') {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function PATCH(req, { params }) {
       );
     }
     
-    const { id } = params;
+    const { id } = await params;
     const { nombre, descripcion } = await req.json();
     
     // Verificar que el departamento existe
@@ -69,7 +69,7 @@ export async function PATCH(req, { params }) {
     
     let sql = 'UPDATE departamentos SET ';
     const updates = [];
-    const params = [];
+    const values = [];
     
     if (nombre !== undefined) {
       // Verificar que no exista otro departamento con el mismo nombre
@@ -86,12 +86,12 @@ export async function PATCH(req, { params }) {
       }
       
       updates.push('nombre = ?');
-      params.push(nombre);
+      values.push(nombre);
     }
     
     if (descripcion !== undefined) {
       updates.push('descripcion = ?');
-      params.push(descripcion);
+      values.push(descripcion);
     }
     
     if (updates.length === 0) {
@@ -103,9 +103,9 @@ export async function PATCH(req, { params }) {
     
     sql += updates.join(', ');
     sql += ' WHERE id = ?';
-    params.push(id);
+    values.push(id);
     
-    await query(sql, params);
+    await query(sql, values);
     
     return NextResponse.json({ message: 'Departamento actualizado correctamente' });
   } catch (error) {
@@ -120,7 +120,7 @@ export async function PATCH(req, { params }) {
 // Eliminar un departamento (solo admin)
 export async function DELETE(req, { params }) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session || session.user.role !== 'admin') {
       return NextResponse.json(
@@ -129,7 +129,7 @@ export async function DELETE(req, { params }) {
       );
     }
     
-    const { id } = params;
+    const { id } = await params;
     
     // Verificar que el departamento existe
     const departamentos = await query(

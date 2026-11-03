@@ -1,13 +1,13 @@
 // src/app/api/items/[id]/route.js
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 // Obtener un item específico
 export async function GET(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     
     if (!session) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function GET(req, context) {
 // Actualizar un item (solo admin)
 export async function PATCH(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     console.log('API PATCH: Sesión actual:', JSON.stringify(session));
     
     // Comprobar si el usuario es administrador - verificar tanto 'role' como 'rol'
@@ -76,7 +76,20 @@ export async function PATCH(req, context) {
     
     // Extraer el ID de los parámetros de contexto de manera asincrónica
     const { id } = await context.params;
-    const { nombre, descripcion, departamento_id, cantidad_total, cantidad_disponible, estado } = await req.json();
+    const body = await req.json();
+    const { nombre, descripcion, departamento_id, estado } = body;
+    // Los formularios pueden enviar números como texto; se convierten para compararlos bien
+    const toNumber = (v) => (v === undefined || v === null || v === '' ? undefined : Number(v));
+    const cantidad_total = toNumber(body.cantidad_total);
+    const cantidad_disponible = toNumber(body.cantidad_disponible);
+
+    if ((cantidad_total !== undefined && (!Number.isInteger(cantidad_total) || cantidad_total < 0)) ||
+        (cantidad_disponible !== undefined && (!Number.isInteger(cantidad_disponible) || cantidad_disponible < 0))) {
+      return NextResponse.json(
+        { error: 'Las cantidades deben ser números enteros no negativos' },
+        { status: 400 }
+      );
+    }
     
     // Verificar que el item existe
     const items = await query(
@@ -167,7 +180,7 @@ export async function PATCH(req, context) {
     }
     
     // Añadir campo updated_at
-    updateFields.push('updated_at = NOW()');
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
     
     // Ejecutar la actualización
     await query(
@@ -180,9 +193,11 @@ export async function PATCH(req, context) {
     revalidatePath(`/dashboard/admin/inventario/editar/${id}`);
     revalidatePath('/dashboard');
     
-    return NextResponse.json({ 
+    const [itemActualizado] = await query('SELECT * FROM items WHERE id = ?', [id]);
+
+    return NextResponse.json({
       message: 'Item actualizado correctamente',
-      item: { id, ...itemData }
+      item: itemActualizado
     });
   } catch (error) {
     console.error('Error al actualizar item:', error);
@@ -196,7 +211,7 @@ export async function PATCH(req, context) {
 // Eliminar un item (solo admin)
 export async function DELETE(req, context) {
   try {
-    const session = await getServerSession();
+    const session = await getSession();
     console.log('API DELETE: Sesión actual:', JSON.stringify(session));
     
     // Comprobar si el usuario es administrador - verificar tanto 'role' como 'rol'
@@ -236,7 +251,7 @@ export async function DELETE(req, context) {
     
     // Verificar si el item tiene solicitudes activas (no finalizadas)
     const solicitudesActivas = await query(
-      'SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND estado != "Finalizada" AND estado != "Rechazada"',
+      `SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND estado != 'Finalizada' AND estado != 'Rechazada'`,
       [id]
     );
     
@@ -249,7 +264,7 @@ export async function DELETE(req, context) {
     
     // Verificar si hay solicitudes históricas (finalizadas o rechazadas)
     const solicitudesHistoricas = await query(
-      'SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND (estado = "Finalizada" OR estado = "Rechazada")',
+      `SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND (estado = 'Finalizada' OR estado = 'Rechazada')`,
       [id]
     );
     
@@ -259,7 +274,7 @@ export async function DELETE(req, context) {
       console.log(`API DELETE: El item ${id} tiene ${solicitudesHistoricas[0].count} solicitudes históricas. Marcando como "Agotado" en lugar de borrar.`);
       
       await query(
-        'UPDATE items SET estado = "Agotado", cantidad_disponible = 0, updated_at = NOW() WHERE id = ?',
+        `UPDATE items SET estado = 'Agotado', cantidad_disponible = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [id]
       );
       
@@ -278,7 +293,7 @@ export async function DELETE(req, context) {
     
     return NextResponse.json({ 
       message: 'Item eliminado correctamente',
-      status: softDelete ? 'soft_delete' : 'delete'
+      status: 'delete'
     });
   } catch (error) {
     console.error('Error al eliminar item:', error);

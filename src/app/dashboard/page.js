@@ -345,7 +345,7 @@ export default function Dashboard() {
                         Solicitar equipo
                       </dt>
                       <dd className="mt-1 text-sm text-gray-600 md:col-span-5 md:mt-0 flex items-center">
-                        Dirígete a "Nueva Solicitud", selecciona el departamento, el equipo, la fecha y el motivo de uso.
+                        Dirígete a &quot;Nueva Solicitud&quot;, selecciona el departamento, el equipo, la fecha y el motivo de uso.
                       </dd>
                     </div>
                     <div className="bg-gray-50 px-6 py-5 grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -356,7 +356,7 @@ export default function Dashboard() {
                         Revisar estado
                       </dt>
                       <dd className="mt-1 text-sm text-gray-600 md:col-span-5 md:mt-0 flex items-center">
-                        Ve a "Mis Solicitudes" para ver el estado de tus solicitudes pendientes y el historial de préstamos.
+                        Ve a &quot;Mis Solicitudes&quot; para ver el estado de tus solicitudes pendientes y el historial de préstamos.
                       </dd>
                     </div>
                     <div className="bg-white px-6 py-5 grid grid-cols-1 md:grid-cols-6 gap-4">
