@@ -35,8 +35,8 @@ describe('format', () => {
   });
 
   it('nombres, iniciales y plurales', () => {
-    expect(fullName({ nombre: 'Luis', apellido: 'Calderon' })).toBe('Luis Calderon');
-    expect(initials('Luis Calderon')).toBe('LC');
+    expect(fullName({ nombre: 'Ana', apellido: 'Rosario' })).toBe('Ana Rosario');
+    expect(initials('Ana Rosario')).toBe('AR');
     expect(initials('')).toBe('');
     expect(pluralize(1, 'equipo')).toBe('1 equipo');
     expect(pluralize(3, 'equipo')).toBe('3 equipos');

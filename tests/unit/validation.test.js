@@ -6,7 +6,7 @@ import {
 
 describe('normalizeMatricula', () => {
   it('quita el dominio, espacios y mayúsculas', () => {
-    expect(normalizeMatricula('  LC22-1392@unphu.edu.do ')).toBe('lc22-1392');
+    expect(normalizeMatricula('  AB24-0001@unphu.edu.do ')).toBe('ab24-0001');
     expect(normalizeMatricula(undefined)).toBe('');
   });
 });

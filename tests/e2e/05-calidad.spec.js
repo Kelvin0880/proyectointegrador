@@ -16,7 +16,7 @@ const PANEL = [
   '/dashboard/admin/departamentos',
   '/dashboard/admin/usuarios',
   '/dashboard/admin/informes',
-  '/dashboard/solicitudes/2',
+  '/dashboard/solicitudes/4',
 ];
 
 async function checkPage(page, url, errors) {

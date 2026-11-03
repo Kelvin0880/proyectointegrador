@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth/next';
 export const USERS = {
   admin: { id: '1', name: 'Administrador Sistema', email: 'admin@unphu.edu.do', matricula: 'admin', role: 'admin' },
   superadmin: { id: '3', name: 'Super Admin', email: 'superadmin@unphu.edu.do', matricula: 'superadmin', role: 'admin' },
-  luis: { id: '2', name: 'Luis Calderon', email: 'lc22-1392@unphu.edu.do', matricula: 'lc22-1392', role: 'usuario' },
+  estudiante: { id: '5', name: 'Mario Mesa', email: 'mariomesa@unphu.edu.do', matricula: 'mariomesa', role: 'usuario' },
   juan: { id: '4', name: 'Juan Miliano', email: 'jm18-0990@unphu.edu.do', matricula: 'jm18-0990', role: 'usuario' },
 };
 

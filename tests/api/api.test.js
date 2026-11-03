@@ -49,7 +49,7 @@ const item = async (id) => (await db.queryOne('SELECT * FROM items WHERE id = ?'
 describe('base de datos', () => {
   it('se crea con los datos iniciales', async () => {
     const [{ total }] = await db.query('SELECT COUNT(*) AS total FROM usuarios');
-    expect(total).toBe(5);
+    expect(total).toBe(4);
     expect(fs.existsSync(dbFile)).toBe(true);
   });
 
@@ -70,8 +70,8 @@ describe('base de datos', () => {
   });
 
   it('devuelve fechas en formato ISO', async () => {
-    const sol = await db.queryOne('SELECT fecha_solicitud, fecha_uso FROM solicitudes WHERE id = 2');
-    expect(sol.fecha_solicitud).toBe('2025-03-20T17:26:34Z');
+    const sol = await db.queryOne('SELECT fecha_solicitud, fecha_uso FROM solicitudes WHERE id = 4');
+    expect(sol.fecha_solicitud).toBe('2025-03-20T18:06:10Z');
     expect(sol.fecha_uso).toBe('2025-03-21T00:00:00');
   });
 });
@@ -84,7 +84,7 @@ describe('autenticación y permisos', () => {
   });
 
   it('impide a un usuario normal usar rutas de administrador', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     expect((await call(routes.solicitudesAdmin.GET, 'GET', '/api/solicitudes/admin')).status).toBe(403);
     expect((await call(routes.items.POST, 'POST', '/api/items', { body: {} })).status).toBe(403);
     expect((await call(routes.usuarios.GET, 'GET', '/api/usuarios')).status).toBe(403);
@@ -140,7 +140,7 @@ describe('equipos', () => {
   let nuevoId;
 
   it('lista y filtra equipos', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     const all = await call(routes.items.GET, 'GET', '/api/items');
     expect(all.body).toHaveLength(9);
     expect(all.body[0]).toHaveProperty('departamento_nombre');
@@ -180,7 +180,7 @@ describe('equipos', () => {
   it('respeta el estado de mantenimiento', async () => {
     const res = await call(routes.item.PATCH, 'PATCH', '/api/items/9', { id: 9, body: { estado: 'En mantenimiento' } });
     expect(res.body.item.estado).toBe('En mantenimiento');
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     const sol = await call(routes.solicitudes.POST, 'POST', '/api/solicitudes', {
       body: { item_id: 9, fecha_uso: FUTURE_DATE, hora_inicio: '08:00', hora_fin: '09:00', motivo: 'Clase de prueba' },
     });
@@ -205,9 +205,9 @@ describe('equipos', () => {
   });
 
   it('marca como agotado un equipo con historial', async () => {
-    const res = await call(routes.item.DELETE, 'DELETE', '/api/items/2', { id: 2 });
+    const res = await call(routes.item.DELETE, 'DELETE', '/api/items/7', { id: 7 });
     expect(res.body.status).toBe('soft_delete');
-    expect(await item(2)).toMatchObject({ estado: 'Agotado', cantidad_disponible: 0 });
+    expect(await item(7)).toMatchObject({ estado: 'Agotado', cantidad_disponible: 0 });
   });
 
   it('expone el id del equipo creado para los siguientes casos', () => {
@@ -222,7 +222,7 @@ describe('solicitudes y control de existencias', () => {
   let s2;
 
   it('valida la solicitud', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     const past = await call(routes.solicitudes.POST, 'POST', '/api/solicitudes', { body: { ...base, item_id: 1, fecha_uso: '2000-01-01' } });
     expect(past.status).toBe(400);
     const hours = await call(routes.solicitudes.POST, 'POST', '/api/solicitudes', { body: { ...base, item_id: 1, hora_fin: '09:00' } });
@@ -238,7 +238,7 @@ describe('solicitudes y control de existencias', () => {
     expect(s1).toBeDefined();
     const mine = await call(routes.solicitudes.GET, 'GET', '/api/solicitudes?estado=Pendiente');
     expect(mine.body.map((s) => s.id)).toEqual(expect.arrayContaining([s1, s2]));
-    expect(mine.body.every((s) => s.usuario_id === 2)).toBe(true);
+    expect(mine.body.every((s) => s.usuario_id === 5)).toBe(true);
 
     loginAs(USERS.juan);
     expect((await call(routes.solicitud.GET, 'GET', `/api/solicitudes/${s1}`, { id: s1 })).status).toBe(403);
@@ -246,9 +246,9 @@ describe('solicitudes y control de existencias', () => {
   });
 
   it('las estadísticas cuentan por estado', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     const res = await call(routes.stats.GET, 'GET', '/api/solicitudes/stats');
-    expect(res.body).toMatchObject({ pendientes: 2, finalizadas: 2, total: 4 });
+    expect(res.body).toMatchObject({ pendientes: 2, finalizadas: 0, total: 2 });
   });
 
   it('solo un admin puede cambiar el estado', async () => {
@@ -297,7 +297,7 @@ describe('solicitudes y control de existencias', () => {
   });
 
   it('el dueño solo puede cancelar solicitudes pendientes', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     expect((await call(routes.solicitud.DELETE, 'DELETE', `/api/solicitudes/${s1}`, { id: s1 })).status).toBe(400);
     const pending = (await call(routes.solicitudes.POST, 'POST', '/api/solicitudes', { body: { ...base, item_id: 1 } })).body.id;
     const res = await call(routes.solicitud.DELETE, 'DELETE', `/api/solicitudes/${pending}`, { id: pending });
@@ -315,15 +315,15 @@ describe('solicitudes y control de existencias', () => {
   });
 
   it('el listado de administración filtra y busca', async () => {
-    const res = await call(routes.solicitudesAdmin.GET, 'GET', '/api/solicitudes/admin?estado=Finalizada&q=calderon');
+    const res = await call(routes.solicitudesAdmin.GET, 'GET', '/api/solicitudes/admin?estado=Rechazada&q=miliano');
     expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body.every((s) => s.estado === 'Finalizada' && s.usuario_apellido === 'Calderon')).toBe(true);
+    expect(res.body.every((s) => s.estado === 'Rechazada' && s.usuario_apellido === 'Miliano')).toBe(true);
   });
 });
 
 describe('departamentos', () => {
   it('lista con resumen de inventario', async () => {
-    loginAs(USERS.luis);
+    loginAs(USERS.estudiante);
     const res = await call(routes.departamentos.GET, 'GET', '/api/departamentos');
     expect(res.body[0]).toHaveProperty('total_items');
     expect(res.body[0]).toHaveProperty('unidades_disponibles');
@@ -353,9 +353,9 @@ describe('departamentos', () => {
 describe('usuarios y perfil', () => {
   it('lista usuarios con su actividad', async () => {
     loginAs(USERS.admin);
-    const res = await call(routes.usuarios.GET, 'GET', '/api/usuarios?q=calderon');
+    const res = await call(routes.usuarios.GET, 'GET', '/api/usuarios?q=miliano');
     expect(res.body).toHaveLength(1);
-    expect(res.body[0]).toMatchObject({ matricula: 'lc22-1392' });
+    expect(res.body[0]).toMatchObject({ matricula: 'jm18-0990' });
     expect(res.body[0]).not.toHaveProperty('password');
   });
 
@@ -370,9 +370,9 @@ describe('usuarios y perfil', () => {
   });
 
   it('actualiza el perfil propio', async () => {
-    loginAs(USERS.luis);
-    const res = await call(routes.perfil.PATCH, 'PATCH', '/api/perfil', { body: { nombre: 'Luis Alberto', apellido: 'Calderon' } });
-    expect(res.body.perfil.nombre).toBe('Luis Alberto');
+    loginAs(USERS.estudiante);
+    const res = await call(routes.perfil.PATCH, 'PATCH', '/api/perfil', { body: { nombre: 'Mario Andrés', apellido: 'Mesa' } });
+    expect(res.body.perfil.nombre).toBe('Mario Andrés');
     expect(res.body.perfil).not.toHaveProperty('password');
     expect((await call(routes.perfil.PATCH, 'PATCH', '/api/perfil', { body: { nombre: '', apellido: 'X' } })).status).toBe(400);
   });
@@ -408,6 +408,6 @@ describe('informes y resumen', () => {
   it('el resumen del panel incluye todas las secciones', async () => {
     const res = await call(routes.resumen.GET, 'GET', '/api/admin/resumen');
     expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['solicitudes', 'inventario', 'usuarios', 'departamentos', 'pendientesRecientes', 'stockBajo']));
-    expect(res.body.usuarios.total).toBe(6);
+    expect(res.body.usuarios.total).toBe(5);
   });
 });

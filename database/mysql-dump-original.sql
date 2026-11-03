@@ -110,7 +110,7 @@ CREATE TABLE `solicitudes` (
 
 LOCK TABLES `solicitudes` WRITE;
 /*!40000 ALTER TABLE `solicitudes` DISABLE KEYS */;
-INSERT INTO `solicitudes` VALUES (2,2,2,'2025-03-20 17:26:34','2025-03-21','14:26:00','15:52:00',' lo quiero usar jeje','Finalizada','no lo tenemos disponible\n','2025-03-20 17:26:34','2025-03-20 17:30:02'),(3,2,8,'2025-03-20 17:32:00','2025-03-21','13:31:00','17:31:00','clases','Finalizada',NULL,'2025-03-20 17:32:00','2025-03-20 18:10:51'),(4,4,7,'2025-03-20 18:06:10','2025-03-21','14:00:00','16:00:00',' quiero usarlo para mi clase de derecho','Rechazada',NULL,'2025-03-20 18:06:10','2025-03-20 18:07:39');
+INSERT INTO `solicitudes` VALUES (4,4,7,'2025-03-20 18:06:10','2025-03-21','14:00:00','16:00:00',' quiero usarlo para mi clase de derecho','Rechazada',NULL,'2025-03-20 18:06:10','2025-03-20 18:07:39');
 /*!40000 ALTER TABLE `solicitudes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -143,7 +143,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'admin','admin@unphu.edu.do','Administrador','Sistema','$2b$10$X7o4c5sLUQAVyFXsn.8yJeZ1YYSFrnVQKrYf5VQ1xAGr2KTDQfTnu','admin','2025-03-20 03:24:02','2025-03-20 03:24:02'),(2,'lc22-1392','lc22-1392@unphu.edu.do','Luis','Calderon','$2b$10$X21ueO8oKgYiYNYjH2XrPOxuV/a26a0OPcN.ZbIBTuwI5N.St1MIO','usuario','2025-03-20 03:52:20','2025-03-20 03:52:20'),(3,'superadmin','superadmin@unphu.edu.do','Super','Admin','$2b$10$mFXiOinR2agYeYj3S5dtl.8nq8yfbGlrGDplIJDy6kj1Mka0cXAoa','admin','2025-03-20 04:35:41','2025-03-20 04:41:08'),(4,'jm18-0990','jm18-0990@unphu.edu.do','Juan','Miliano','$2b$10$kb50fRq2FvJOPuBlMcnRBubirhlgMNXoOoG1OwIvB9eCDNcobxyAe','usuario','2025-03-20 18:05:01','2025-03-20 18:05:01'),(5,'mariomesa','mariomesa@unphu.edu.do','Mario','Mesa','$2b$10$MIq947WVQoKZvvc9YV1i0.my4lRRbebW33rrMeaqBTJfrtQ2CqWFy','usuario','2025-03-20 18:16:15','2025-03-20 18:16:15');
+INSERT INTO `usuarios` VALUES (1,'admin','admin@unphu.edu.do','Administrador','Sistema','$2b$10$X7o4c5sLUQAVyFXsn.8yJeZ1YYSFrnVQKrYf5VQ1xAGr2KTDQfTnu','admin','2025-03-20 03:24:02','2025-03-20 03:24:02'),(3,'superadmin','superadmin@unphu.edu.do','Super','Admin','$2b$10$mFXiOinR2agYeYj3S5dtl.8nq8yfbGlrGDplIJDy6kj1Mka0cXAoa','admin','2025-03-20 04:35:41','2025-03-20 04:41:08'),(4,'jm18-0990','jm18-0990@unphu.edu.do','Juan','Miliano','$2b$10$kb50fRq2FvJOPuBlMcnRBubirhlgMNXoOoG1OwIvB9eCDNcobxyAe','usuario','2025-03-20 18:05:01','2025-03-20 18:05:01'),(5,'mariomesa','mariomesa@unphu.edu.do','Mario','Mesa','$2b$10$MIq947WVQoKZvvc9YV1i0.my4lRRbebW33rrMeaqBTJfrtQ2CqWFy','usuario','2025-03-20 18:16:15','2025-03-20 18:16:15');
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

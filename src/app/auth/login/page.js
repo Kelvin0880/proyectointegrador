@@ -75,7 +75,7 @@ function LoginForm() {
         )}
         {formError && <Alert tone="error">{formError}</Alert>}
 
-        <Field label="Matrícula" error={errors.matricula} hint="Por ejemplo: lc22-1392">
+        <Field label="Matrícula" error={errors.matricula} hint="Por ejemplo: ab24-0001">
           {({ id, describedBy }) => (
             <Input
               id={id}
