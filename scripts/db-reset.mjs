@@ -23,5 +23,5 @@ console.log(
   `  departamentos: ${count('departamentos')}, usuarios: ${count('usuarios')}, ` +
   `items: ${count('items')}, solicitudes: ${count('solicitudes')}`
 );
-console.log('  Admin: admin@unphu.edu.do / admin123');
+console.log('  Administrador: matrícula admin / contraseña admin123');
 db.close();
