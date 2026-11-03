@@ -11,8 +11,12 @@ export default function Home() {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                {/* Logo de la UNPHU (puedes reemplazarlo con la imagen real) */}
-                <span className="font-bold text-xl">UNPHU Inventario</span>
+                <Link href="/" className="flex items-center">
+                  <span className="h-11 w-11 flex items-center justify-center bg-white rounded-full overflow-hidden shadow-sm ring-2 ring-white">
+                    <Image src="/logo-unphu.png" alt="Logo UNPHU" width={44} height={44} priority className="object-contain" />
+                  </span>
+                  <span className="ml-3 font-bold text-xl">UNPHU Inventario</span>
+                </Link>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -36,6 +40,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-white to-green-50 flex-grow">
         <div className="max-w-7xl mx-auto text-center xl:max-w-screen-xl 2xl:max-w-screen-2xl">
+          <Image
+            src="/logo-unphu.png"
+            alt="Logo de la Universidad Nacional Pedro Henríquez Ureña"
+            width={160}
+            height={161}
+            priority
+            className="mx-auto mb-8 rounded-full shadow-lg"
+          />
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
             Sistema de Inventario UNPHU
           </h1>
@@ -107,9 +119,14 @@ export default function Home() {
       <footer className="bg-green-800 text-white py-8 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:max-w-screen-xl 2xl:max-w-screen-2xl">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <p className="text-lg font-semibold">UNPHU - Sistema de Inventario</p>
-              <p className="text-sm text-green-200">© {new Date().getFullYear()} Todos los derechos reservados</p>
+            <div className="mb-4 md:mb-0 flex items-center">
+              <span className="h-12 w-12 flex-shrink-0 flex items-center justify-center bg-white rounded-full overflow-hidden mr-3">
+                <Image src="/logo-unphu.png" alt="Logo UNPHU" width={48} height={48} className="object-contain" />
+              </span>
+              <div>
+                <p className="text-lg font-semibold">UNPHU - Sistema de Inventario</p>
+                <p className="text-sm text-green-200">© {new Date().getFullYear()} Todos los derechos reservados</p>
+              </div>
             </div>
             <div>
               <p className="text-sm text-green-200">Universidad Nacional Pedro Henríquez Ureña</p>

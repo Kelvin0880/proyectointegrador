@@ -12,13 +12,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "UNPHU",
-  description: "UNPHU Inventario",
+  title: "UNPHU Inventario",
+  description: "Sistema de Inventario y préstamo de equipos de la UNPHU",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

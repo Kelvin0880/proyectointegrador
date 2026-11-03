@@ -1,17 +1,23 @@
 // src/app/components/layout/Footer.js
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
     <footer className="bg-green-800 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-6 md:mb-0">
-            <h2 className="text-lg font-bold">UNPHU - Sistema de Inventario</h2>
-            <p className="mt-1 text-sm text-green-100">
-              © {new Date().getFullYear()} Universidad Nacional Pedro Henríquez Ureña
-            </p>
+          <div className="mb-6 md:mb-0 flex items-center">
+            <span className="h-12 w-12 flex-shrink-0 flex items-center justify-center bg-white rounded-full overflow-hidden mr-3">
+              <Image src="/logo-unphu.png" alt="Logo UNPHU" width={48} height={48} className="object-contain" />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold">UNPHU - Sistema de Inventario</h2>
+              <p className="mt-1 text-sm text-green-100">
+                © {new Date().getFullYear()} Universidad Nacional Pedro Henríquez Ureña
+              </p>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-8">

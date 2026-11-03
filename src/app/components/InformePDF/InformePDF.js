@@ -1,5 +1,8 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+
+// URL absoluta del logo (react-pdf la descarga desde el navegador)
+const LOGO_SRC = typeof window !== 'undefined' ? `${window.location.origin}/logo-unphu.png` : '/logo-unphu.png';
 
 // Define estilos para el PDF
 const styles = StyleSheet.create({
@@ -12,6 +15,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  logo: {
+    width: 80,
+    height: 81,
   },
   title: {
     fontSize: 24,
@@ -136,6 +143,8 @@ const InformePDF = ({ reportData, periodo, tipoInforme }) => {
               Tipo: {obtenerDescripcionTipo(tipoInforme)}
             </Text>
           </View>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- Image de react-pdf no admite alt */}
+          <Image style={styles.logo} src={LOGO_SRC} />
         </View>
         
         {/* Sección de Equipos más solicitados */}

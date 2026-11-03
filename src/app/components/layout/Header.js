@@ -31,12 +31,12 @@ export default function Header() {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/dashboard" className="flex items-center">
-                <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full overflow-hidden shadow-sm">
+                <div className="h-11 w-11 flex items-center justify-center bg-white rounded-full overflow-hidden shadow-sm ring-2 ring-white">
                   <Image
-                    src="/next.svg"
+                    src="/logo-unphu.png"
                     alt="Logo UNPHU"
-                    width={32}
-                    height={32}
+                    width={44}
+                    height={44}
                     priority
                     className="object-contain"
                   />
