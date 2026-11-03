@@ -81,12 +81,7 @@ function normalizeRow(row) {
 
 const READ_RE = /^\s*(SELECT|WITH|PRAGMA)\b|\bRETURNING\b/i;
 
-/**
- * Ejecuta una consulta SQL con parámetros "?".
- * - SELECT: devuelve un arreglo de filas.
- * - INSERT/UPDATE/DELETE: devuelve { insertId, affectedRows } (igual que mysql2).
- */
-export async function query(sql, params = []) {
+function execute(sql, params = []) {
   try {
     const stmt = getDb().prepare(sql);
     const values = params.map(normalizeParam);
@@ -100,6 +95,37 @@ export async function query(sql, params = []) {
     };
   } catch (error) {
     console.error('Error al ejecutar la consulta:', error.message, '\nSQL:', sql);
+    throw error;
+  }
+}
+
+/**
+ * Ejecuta una consulta SQL con parámetros "?".
+ * - SELECT: devuelve un arreglo de filas.
+ * - INSERT/UPDATE/DELETE: devuelve { insertId, affectedRows } (igual que mysql2).
+ */
+export async function query(sql, params = []) {
+  return execute(sql, params);
+}
+
+/** Devuelve la primera fila de un SELECT o null */
+export async function queryOne(sql, params = []) {
+  return execute(sql, params)[0] ?? null;
+}
+
+/**
+ * Ejecuta varias operaciones de forma atómica. El callback es síncrono y recibe
+ * `q(sql, params)` (misma semántica que query). Si lanza un error, se revierte todo.
+ */
+export function transaction(callback) {
+  const db = getDb();
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const result = callback(execute);
+    db.exec('COMMIT');
+    return result;
+  } catch (error) {
+    db.exec('ROLLBACK');
     throw error;
   }
 }

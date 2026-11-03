@@ -35,6 +35,10 @@ En la pantalla de inicio de sesión escribe solo la matrícula (por ejemplo `adm
 | `npm run db:reset` | Borra la base de datos y la vuelve a crear con los datos iniciales (detén antes `npm run dev`) |
 | `npm run build` y luego `npm start` | Compila y ejecuta la versión de producción |
 | `node scripts/hash-gen.js <contraseña>` | Genera el hash bcrypt de una contraseña |
+| `npm test` | Pruebas unitarias, de componentes y de la API (Vitest) |
+| `npm run test:e2e` | Pruebas de punta a punta en el navegador (Playwright) y capturas en `docs/screenshots` |
+
+La primera vez que corras `npm run test:e2e` instala el navegador de pruebas con `npx playwright install chromium`.
 
 ## Configuración (opcional)
 

@@ -1,140 +1,166 @@
-// src/app/page.js
-import Link from 'next/link';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
+import {
+  ArrowRight, BellRing, Boxes, ChartNoAxesColumn, ClipboardCheck, ClipboardPlus, FileText, ShieldCheck, UserPlus,
+} from 'lucide-react';
+import { Button } from '@/components/ui';
+import { PublicFooter, PublicHeader } from '@/components/layout/PublicLayout';
+import { getSession } from '@/lib/session';
 
-export default function Home() {
+const FEATURES = [
+  {
+    icon: Boxes,
+    title: 'Inventario centralizado',
+    text: 'Equipos de Audiovisual y Tecnología con sus existencias siempre actualizadas.',
+  },
+  {
+    icon: ClipboardPlus,
+    title: 'Solicitudes en línea',
+    text: 'Elige el equipo, la fecha y el horario. Sin formularios en papel ni filas.',
+  },
+  {
+    icon: ClipboardCheck,
+    title: 'Aprobación y seguimiento',
+    text: 'Los administradores aprueban, rechazan y registran devoluciones con trazabilidad.',
+  },
+  {
+    icon: ChartNoAxesColumn,
+    title: 'Informes en PDF',
+    text: 'Rankings de equipos y usuarios por periodo, listos para descargar.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Acceso seguro',
+    text: 'Cuentas con la matrícula institucional y permisos por rol.',
+  },
+  {
+    icon: BellRing,
+    title: 'Estado en tiempo real',
+    text: 'Consulta en todo momento si tu solicitud está pendiente, aprobada o finalizada.',
+  },
+];
+
+const STEPS = [
+  { icon: UserPlus, title: 'Crea tu cuenta', text: 'Regístrate con tu matrícula de la UNPHU.' },
+  { icon: ClipboardPlus, title: 'Solicita un equipo', text: 'Selecciona el departamento, el equipo y el horario de uso.' },
+  { icon: FileText, title: 'Retira y devuelve', text: 'Cuando se apruebe, retira el equipo y devuélvelo al terminar.' },
+];
+
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const session = await getSession();
+  if (session?.user) redirect('/dashboard');
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Barra de navegación */}
-      <nav className="bg-green-700 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/" className="flex items-center">
-                  <span className="h-11 w-11 flex items-center justify-center bg-white rounded-full overflow-hidden shadow-sm ring-2 ring-white">
-                    <Image src="/logo-unphu.png" alt="Logo UNPHU" width={44} height={44} priority className="object-contain" />
+    <div className="flex min-h-screen flex-col bg-white">
+      <PublicHeader />
+
+      <main className="flex-1">
+        {/* Portada */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white">
+          <div className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-brand-100/60 blur-3xl" aria-hidden="true" />
+          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2 lg:px-8">
+            <div className="text-center lg:text-left">
+              <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-700 shadow-sm ring-1 ring-brand-200">
+                Universidad Nacional Pedro Henríquez Ureña
+              </p>
+              <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                Sistema de Inventario <span className="text-brand-700">UNPHU</span>
+              </h1>
+              <p className="mx-auto mt-6 max-w-xl text-lg text-slate-600 lg:mx-0">
+                Solicita y gestiona el préstamo de equipos tecnológicos y audiovisuales de la universidad de forma rápida, ordenada y transparente.
+              </p>
+              <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+                <Button href="/auth/login" size="lg" iconRight={ArrowRight}>
+                  Iniciar sesión
+                </Button>
+                <Button href="/auth/register" size="lg" variant="secondary">
+                  Crear cuenta
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 -m-6 rounded-full bg-gradient-to-br from-brand-200 to-brand-50" aria-hidden="true" />
+                <Image
+                  src="/logo-unphu.png"
+                  alt="Escudo de la Universidad Nacional Pedro Henríquez Ureña"
+                  width={320}
+                  height={322}
+                  priority
+                  className="relative size-56 rounded-full bg-white shadow-2xl ring-8 ring-white sm:size-72"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Características */}
+        <section className="py-16 sm:py-24" aria-labelledby="caracteristicas">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 id="caracteristicas" className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Todo el proceso de préstamo en un solo lugar
+              </h2>
+              <p className="mt-4 text-lg text-slate-600">Diseñado para estudiantes, docentes y el personal de cada departamento.</p>
+            </div>
+            <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map(({ icon: Icon, title, text }) => (
+                <div key={title} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                    <Icon className="size-5" aria-hidden="true" />
                   </span>
-                  <span className="ml-3 font-bold text-xl">UNPHU Inventario</span>
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/auth/login" 
-                className="px-4 py-2 rounded-md bg-white text-green-700 font-medium hover:bg-gray-100 transition-colors"
-              >
-                Iniciar Sesión
-              </Link>
-              <Link 
-                href="/auth/register" 
-                className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-500 transition-colors"
-              >
-                Registrarse
-              </Link>
+                  <h3 className="mt-5 text-base font-semibold text-slate-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </nav>
+        </section>
 
-      {/* Hero Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-white to-green-50 flex-grow">
-        <div className="max-w-7xl mx-auto text-center xl:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <Image
-            src="/logo-unphu.png"
-            alt="Logo de la Universidad Nacional Pedro Henríquez Ureña"
-            width={160}
-            height={161}
-            priority
-            className="mx-auto mb-8 rounded-full shadow-lg"
-          />
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Sistema de Inventario UNPHU
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
-            Gestiona de manera eficiente el inventario de equipos tecnológicos y audiovisuales de la universidad.
-          </p>
-          <div className="flex justify-center space-x-6">
-            <Link
-              href="/auth/login"
-              className="px-6 py-3 rounded-md bg-green-700 text-white font-medium hover:bg-green-600 transition-colors"
-            >
-              Iniciar Sesión
-            </Link>
-            <Link
-              href="/auth/register"
-              className="px-6 py-3 rounded-md bg-white text-green-700 border border-green-700 font-medium hover:bg-green-50 transition-colors"
-            >
-              Registrarse
-            </Link>
+        {/* Cómo funciona */}
+        <section className="bg-slate-50 py-16 sm:py-24" aria-labelledby="como-funciona">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <h2 id="como-funciona" className="text-center text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Cómo funciona
+            </h2>
+            <ol className="mt-14 grid gap-8 md:grid-cols-3">
+              {STEPS.map(({ icon: Icon, title, text }, index) => (
+                <li key={title} className="relative text-center">
+                  <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-700 text-white shadow-lg shadow-brand-700/20">
+                    <Icon className="size-6" aria-hidden="true" />
+                  </span>
+                  <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-brand-700">Paso {index + 1}</p>
+                  <h3 className="mt-1 text-lg font-semibold text-slate-900">{title}</h3>
+                  <p className="mx-auto mt-2 max-w-xs text-sm text-slate-600">{text}</p>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Características */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto xl:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Características del Sistema
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
-              <div className="h-12 w-12 bg-green-100 rounded-md flex items-center justify-center text-green-700 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
+        {/* Llamado a la acción */}
+        <section className="py-16 sm:py-20">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-3xl bg-brand-800 px-6 py-12 text-center shadow-xl sm:px-12">
+              <div className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full bg-brand-600/40 blur-3xl" aria-hidden="true" />
+              <h2 className="relative text-2xl font-bold text-white sm:text-3xl">¿Listo para solicitar tu primer equipo?</h2>
+              <p className="relative mx-auto mt-3 max-w-xl text-brand-100/90">Crea tu cuenta con tu matrícula institucional y empieza hoy mismo.</p>
+              <div className="relative mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <Button href="/auth/register" variant="white" size="lg">
+                  Crear cuenta
+                </Button>
+                <Button href="/auth/login" variant="outline-white" size="lg">
+                  Ya tengo cuenta
+                </Button>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestión de Inventario</h3>
-              <p className="text-gray-600">
-                Control completo de los equipos disponibles en los departamentos de Audiovisual y Tecnología.
-              </p>
-            </div>
-            <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
-              <div className="h-12 w-12 bg-green-100 rounded-md flex items-center justify-center text-green-700 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Solicitudes de Préstamo</h3>
-              <p className="text-gray-600">
-                Solicita equipos de forma fácil y rápida especificando fechas, horas y motivo de uso.
-              </p>
-            </div>
-            <div className="p-6 bg-white rounded-lg shadow-md border border-gray-100">
-              <div className="h-12 w-12 bg-green-100 rounded-md flex items-center justify-center text-green-700 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Aprobación de Solicitudes</h3>
-              <p className="text-gray-600">
-                Sistema de aprobación para administradores con seguimiento del estado de cada solicitud.
-              </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="bg-green-800 text-white py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:max-w-screen-xl 2xl:max-w-screen-2xl">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0 flex items-center">
-              <span className="h-12 w-12 flex-shrink-0 flex items-center justify-center bg-white rounded-full overflow-hidden mr-3">
-                <Image src="/logo-unphu.png" alt="Logo UNPHU" width={48} height={48} className="object-contain" />
-              </span>
-              <div>
-                <p className="text-lg font-semibold">UNPHU - Sistema de Inventario</p>
-                <p className="text-sm text-green-200">© {new Date().getFullYear()} Todos los derechos reservados</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-green-200">Universidad Nacional Pedro Henríquez Ureña</p>
-              <p className="text-sm text-green-200">República Dominicana</p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

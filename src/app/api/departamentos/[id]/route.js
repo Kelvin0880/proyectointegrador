@@ -1,172 +1,45 @@
+import { query, queryOne } from '@/lib/db';
+import { handler, ok, readJson, requireAdmin, requireUser, badRequest, notFound, parseId } from '@/lib/server/http';
+import { hasErrors, firstError, validateDepartamento } from '@/lib/validation';
 
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
-
-// Obtener un departamento específico
-export async function GET(req, { params }) {
-  try {
-    const session = await getSession();
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-    
-    const { id } = await params;
-    
-    const departamentos = await query(
-      'SELECT * FROM departamentos WHERE id = ?',
-      [id]
-    );
-    
-    if (departamentos.length === 0) {
-      return NextResponse.json(
-        { error: 'Departamento no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(departamentos[0]);
-  } catch (error) {
-    console.error('Error al obtener departamento:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener departamento' },
-      { status: 500 }
-    );
-  }
+async function findDepartamento(id) {
+  const departamento = await queryOne('SELECT * FROM departamentos WHERE id = ?', [id]);
+  if (!departamento) throw notFound('Departamento no encontrado');
+  return departamento;
 }
 
-// Actualizar un departamento (solo admin)
-export async function PATCH(req, { params }) {
-  try {
-    const session = await getSession();
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-    
-    const { id } = await params;
-    const { nombre, descripcion } = await req.json();
-    
-    // Verificar que el departamento existe
-    const departamentos = await query(
-      'SELECT * FROM departamentos WHERE id = ?',
-      [id]
-    );
-    
-    if (departamentos.length === 0) {
-      return NextResponse.json(
-        { error: 'Departamento no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    let sql = 'UPDATE departamentos SET ';
-    const updates = [];
-    const values = [];
-    
-    if (nombre !== undefined) {
-      // Verificar que no exista otro departamento con el mismo nombre
-      const existentes = await query(
-        'SELECT * FROM departamentos WHERE nombre = ? AND id != ?',
-        [nombre, id]
-      );
-      
-      if (existentes.length > 0) {
-        return NextResponse.json(
-          { error: 'Ya existe un departamento con ese nombre' },
-          { status: 400 }
-        );
-      }
-      
-      updates.push('nombre = ?');
-      values.push(nombre);
-    }
-    
-    if (descripcion !== undefined) {
-      updates.push('descripcion = ?');
-      values.push(descripcion);
-    }
-    
-    if (updates.length === 0) {
-      return NextResponse.json(
-        { error: 'No hay campos para actualizar' },
-        { status: 400 }
-      );
-    }
-    
-    sql += updates.join(', ');
-    sql += ' WHERE id = ?';
-    values.push(id);
-    
-    await query(sql, values);
-    
-    return NextResponse.json({ message: 'Departamento actualizado correctamente' });
-  } catch (error) {
-    console.error('Error al actualizar departamento:', error);
-    return NextResponse.json(
-      { error: 'Error al actualizar departamento' },
-      { status: 500 }
-    );
-  }
-}
+export const GET = handler(async (req, { params }) => {
+  await requireUser();
+  const id = parseId((await params).id);
+  return ok(await findDepartamento(id));
+});
 
-// Eliminar un departamento (solo admin)
-export async function DELETE(req, { params }) {
-  try {
-    const session = await getSession();
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-    
-    const { id } = await params;
-    
-    // Verificar que el departamento existe
-    const departamentos = await query(
-      'SELECT * FROM departamentos WHERE id = ?',
-      [id]
-    );
-    
-    if (departamentos.length === 0) {
-      return NextResponse.json(
-        { error: 'Departamento no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    // Verificar que no haya items asociados a este departamento
-    const items = await query(
-      'SELECT COUNT(*) as count FROM items WHERE departamento_id = ?',
-      [id]
-    );
-    
-    if (items[0].count > 0) {
-      return NextResponse.json(
-        { error: 'No se puede eliminar un departamento con items asociados' },
-        { status: 400 }
-      );
-    }
-    
-    // Eliminar el departamento
-    await query('DELETE FROM departamentos WHERE id = ?', [id]);
-    
-    return NextResponse.json({ message: 'Departamento eliminado correctamente' });
-  } catch (error) {
-    console.error('Error al eliminar departamento:', error);
-    return NextResponse.json(
-      { error: 'Error al eliminar departamento' },
-      { status: 500 }
-    );
-  }
-}
+export const PATCH = handler(async (req, { params }) => {
+  await requireAdmin();
+  const id = parseId((await params).id);
+  const current = await findDepartamento(id);
+  const body = await readJson(req);
 
+  const data = { nombre: body.nombre ?? current.nombre, descripcion: body.descripcion ?? current.descripcion };
+  const errors = validateDepartamento(data);
+  if (hasErrors(errors)) throw badRequest(firstError(errors), errors);
+
+  const nombre = data.nombre.trim();
+  const duplicate = await queryOne('SELECT id FROM departamentos WHERE LOWER(nombre) = LOWER(?) AND id != ?', [nombre, id]);
+  if (duplicate) throw badRequest('Ya existe un departamento con ese nombre', { nombre: 'Ya existe un departamento con ese nombre' });
+
+  await query('UPDATE departamentos SET nombre = ?, descripcion = ? WHERE id = ?', [nombre, data.descripcion?.trim() || null, id]);
+  return ok({ message: 'Departamento actualizado correctamente' });
+});
+
+export const DELETE = handler(async (req, { params }) => {
+  await requireAdmin();
+  const id = parseId((await params).id);
+  await findDepartamento(id);
+
+  const { count } = await queryOne('SELECT COUNT(*) AS count FROM items WHERE departamento_id = ?', [id]);
+  if (count > 0) throw badRequest('No se puede eliminar un departamento que tiene equipos registrados');
+
+  await query('DELETE FROM departamentos WHERE id = ?', [id]);
+  return ok({ message: 'Departamento eliminado correctamente' });
+});

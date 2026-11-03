@@ -1,82 +1,33 @@
-// src/app/api/departamentos/route.js
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
+import { handler, ok, readJson, requireAdmin, requireUser, badRequest } from '@/lib/server/http';
+import { hasErrors, firstError, validateDepartamento } from '@/lib/validation';
 
-// Obtener todos los departamentos
-export async function GET() {
-  try {
-    const session = await getSession();
-    
-    // Permitir acceso a los departamentos incluso sin sesión
-    // para que funcionen las páginas públicas
-    console.log('Obteniendo departamentos, sesión:', session ? 'Activa' : 'No activa');
-    
-    const departamentos = await query(
-      'SELECT * FROM departamentos ORDER BY nombre ASC'
-    );
-    
-    console.log(`Encontrados ${departamentos.length} departamentos`);
-    return NextResponse.json(departamentos);
-  } catch (error) {
-    console.error('Error al obtener departamentos:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener departamentos: ' + error.message },
-      { status: 500 }
-    );
-  }
-}
+// Lista de departamentos con el resumen de su inventario
+export const GET = handler(async () => {
+  await requireUser();
+  const departamentos = await query(`
+    SELECT d.*,
+           COUNT(i.id) AS total_items,
+           COALESCE(SUM(i.cantidad_total), 0) AS total_unidades,
+           COALESCE(SUM(i.cantidad_disponible), 0) AS unidades_disponibles
+    FROM departamentos d
+    LEFT JOIN items i ON i.departamento_id = d.id
+    GROUP BY d.id
+    ORDER BY d.nombre ASC
+  `);
+  return ok(departamentos);
+});
 
-// Crear un nuevo departamento (solo admin)
-export async function POST(req) {
-  try {
-    const session = await getSession();
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No autorizado. Se requieren permisos de administrador.' },
-        { status: 401 }
-      );
-    }
-    
-    const { nombre, descripcion } = await req.json();
-    
-    // Validaciones
-    if (!nombre) {
-      return NextResponse.json(
-        { error: 'El nombre es obligatorio' },
-        { status: 400 }
-      );
-    }
-    
-    // Verificar que no exista un departamento con el mismo nombre
-    const existentes = await query(
-      'SELECT * FROM departamentos WHERE nombre = ?',
-      [nombre]
-    );
-    
-    if (existentes.length > 0) {
-      return NextResponse.json(
-        { error: 'Ya existe un departamento con ese nombre' },
-        { status: 400 }
-      );
-    }
-    
-    // Crear el departamento
-    const result = await query(
-      'INSERT INTO departamentos (nombre, descripcion) VALUES (?, ?)',
-      [nombre, descripcion || null]
-    );
-    
-    return NextResponse.json(
-      { id: result.insertId, message: 'Departamento creado correctamente' },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error al crear departamento:', error);
-    return NextResponse.json(
-      { error: 'Error al crear departamento: ' + error.message },
-      { status: 500 }
-    );
-  }
-}
+export const POST = handler(async (req) => {
+  await requireAdmin();
+  const body = await readJson(req);
+  const errors = validateDepartamento(body);
+  if (hasErrors(errors)) throw badRequest(firstError(errors), errors);
+
+  const nombre = body.nombre.trim();
+  const existing = await queryOne('SELECT id FROM departamentos WHERE LOWER(nombre) = LOWER(?)', [nombre]);
+  if (existing) throw badRequest('Ya existe un departamento con ese nombre', { nombre: 'Ya existe un departamento con ese nombre' });
+
+  const result = await query('INSERT INTO departamentos (nombre, descripcion) VALUES (?, ?)', [nombre, body.descripcion?.trim() || null]);
+  return ok({ id: result.insertId, message: 'Departamento creado correctamente' }, 201);
+});

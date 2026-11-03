@@ -1,305 +1,88 @@
-// src/app/api/items/[id]/route.js
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
-import { revalidatePath } from 'next/cache';
+import { query, queryOne } from '@/lib/db';
+import { handler, ok, readJson, requireAdmin, requireUser, badRequest, notFound, parseId } from '@/lib/server/http';
+import { ITEM_SELECT } from '@/lib/server/queries';
+import { hasErrors, firstError, validateItem } from '@/lib/validation';
 
-// Obtener un item específico
-export async function GET(req, context) {
-  try {
-    const session = await getSession();
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-    
-    // Extraer el ID de los parámetros de contexto de manera asincrónica
-    const { id } = await context.params;
-    
-    console.log('API: Retrieving item with ID:', id);
-    
-    const items = await query(
-      `SELECT i.*, d.nombre as departamento_nombre 
-       FROM items i
-       INNER JOIN departamentos d ON i.departamento_id = d.id
-       WHERE i.id = ?`,
-      [id]
-    );
-    
-    if (items.length === 0) {
-      return NextResponse.json(
-        { error: 'Item no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    const item = items[0];
-    console.log('API: Item found:', item);
-    
-    return NextResponse.json(item);
-  } catch (error) {
-    console.error('Error al obtener item:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener item' },
-      { status: 500 }
-    );
-  }
+async function findItem(id) {
+  const item = await queryOne(`${ITEM_SELECT} WHERE i.id = ?`, [id]);
+  if (!item) throw notFound('Equipo no encontrado');
+  return item;
 }
 
-// Actualizar un item (solo admin)
-export async function PATCH(req, context) {
-  try {
-    const session = await getSession();
-    console.log('API PATCH: Sesión actual:', JSON.stringify(session));
-    
-    // Comprobar si el usuario es administrador - verificar tanto 'role' como 'rol'
-    // para mayor compatibilidad
-    const isAdmin = session?.user && (
-      session.user.role === 'admin' || 
-      session.user.rol === 'admin' ||
-      session.user.email === 'superadmin@unphu.edu.do'
-    );
-    
-    console.log('API PATCH: ¿Es admin?', isAdmin);
-    console.log('API PATCH: Email de usuario:', session?.user?.email);
-    console.log('API PATCH: Rol de usuario:', session?.user?.role || session?.user?.rol);
-    
-    if (!session || !isAdmin) {
-      return NextResponse.json(
-        { error: 'No autorizado para actualizar items' },
-        { status: 401 }
-      );
-    }
-    
-    // Extraer el ID de los parámetros de contexto de manera asincrónica
-    const { id } = await context.params;
-    const body = await req.json();
-    const { nombre, descripcion, departamento_id, estado } = body;
-    // Los formularios pueden enviar números como texto; se convierten para compararlos bien
-    const toNumber = (v) => (v === undefined || v === null || v === '' ? undefined : Number(v));
-    const cantidad_total = toNumber(body.cantidad_total);
-    const cantidad_disponible = toNumber(body.cantidad_disponible);
+async function countPrestadas(id) {
+  const { prestadas } = await queryOne(
+    "SELECT COUNT(*) AS prestadas FROM solicitudes WHERE item_id = ? AND estado = 'Aprobada'",
+    [id]
+  );
+  return prestadas;
+}
 
-    if ((cantidad_total !== undefined && (!Number.isInteger(cantidad_total) || cantidad_total < 0)) ||
-        (cantidad_disponible !== undefined && (!Number.isInteger(cantidad_disponible) || cantidad_disponible < 0))) {
-      return NextResponse.json(
-        { error: 'Las cantidades deben ser números enteros no negativos' },
-        { status: 400 }
-      );
-    }
-    
-    // Verificar que el item existe
-    const items = await query(
-      'SELECT * FROM items WHERE id = ?',
-      [id]
-    );
-    
-    if (items.length === 0) {
-      return NextResponse.json(
-        { error: 'Item no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    // Verificar que el departamento existe si se va a actualizar
-    if (departamento_id) {
-      const departamentos = await query(
-        'SELECT * FROM departamentos WHERE id = ?',
-        [departamento_id]
-      );
-      
-      if (departamentos.length === 0) {
-        return NextResponse.json(
-          { error: 'El departamento seleccionado no existe' },
-          { status: 400 }
-        );
-      }
-    }
-    
-    // Validar cantidad disponible
-    if (cantidad_disponible !== undefined && cantidad_total !== undefined) {
-      if (cantidad_disponible > cantidad_total) {
-        return NextResponse.json(
-          { error: 'La cantidad disponible no puede ser mayor que la cantidad total' },
-          { status: 400 }
-        );
-      }
-    } else if (cantidad_disponible !== undefined && cantidad_total === undefined) {
-      // Si solo se actualiza cantidad_disponible, verificar contra cantidad_total existente
-      if (cantidad_disponible > items[0].cantidad_total) {
-        return NextResponse.json(
-          { error: 'La cantidad disponible no puede ser mayor que la cantidad total' },
-          { status: 400 }
-        );
-      }
-    }
-    
-    // Construir la consulta de actualización
-    let updateFields = [];
-    const updateValues = [];
-    
-    if (nombre !== undefined) {
-      updateFields.push('nombre = ?');
-      updateValues.push(nombre);
-    }
-    
-    if (descripcion !== undefined) {
-      updateFields.push('descripcion = ?');
-      updateValues.push(descripcion);
-    }
-    
-    if (departamento_id !== undefined) {
-      updateFields.push('departamento_id = ?');
-      updateValues.push(departamento_id);
-    }
-    
-    if (cantidad_total !== undefined) {
-      updateFields.push('cantidad_total = ?');
-      updateValues.push(cantidad_total);
-    }
-    
-    if (cantidad_disponible !== undefined) {
-      updateFields.push('cantidad_disponible = ?');
-      updateValues.push(cantidad_disponible);
-    }
-    
-    if (estado !== undefined) {
-      updateFields.push('estado = ?');
-      updateValues.push(estado);
-    }
-    
-    // Si no hay campos para actualizar
-    if (updateFields.length === 0) {
-      return NextResponse.json(
-        { error: 'No se proporcionaron campos para actualizar' },
-        { status: 400 }
-      );
-    }
-    
-    // Añadir campo updated_at
-    updateFields.push('updated_at = CURRENT_TIMESTAMP');
-    
-    // Ejecutar la actualización
-    await query(
-      `UPDATE items SET ${updateFields.join(', ')} WHERE id = ?`,
-      [...updateValues, id]
-    );
-    
-    // Revalidar las rutas afectadas
-    revalidatePath('/dashboard/admin/inventario');
-    revalidatePath(`/dashboard/admin/inventario/editar/${id}`);
-    revalidatePath('/dashboard');
-    
-    const [itemActualizado] = await query('SELECT * FROM items WHERE id = ?', [id]);
+export const GET = handler(async (req, { params }) => {
+  await requireUser();
+  const id = parseId((await params).id);
+  const item = await findItem(id);
+  return ok({ ...item, unidades_prestadas: await countPrestadas(id) });
+});
 
-    return NextResponse.json({
-      message: 'Item actualizado correctamente',
-      item: itemActualizado
+export const PATCH = handler(async (req, { params }) => {
+  await requireAdmin();
+  const id = parseId((await params).id);
+  const current = await findItem(id);
+  const body = await readJson(req);
+
+  const fields = ['nombre', 'descripcion', 'departamento_id', 'cantidad_total', 'cantidad_disponible', 'estado'];
+  const data = Object.fromEntries(fields.map((f) => [f, body[f] === undefined ? current[f] : body[f]]));
+  const errors = validateItem(data);
+  if (hasErrors(errors)) throw badRequest(firstError(errors), errors);
+
+  if (Number(data.departamento_id) !== current.departamento_id) {
+    const departamento = await queryOne('SELECT id FROM departamentos WHERE id = ?', [Number(data.departamento_id)]);
+    if (!departamento) throw badRequest('El departamento seleccionado no existe', { departamento_id: 'El departamento no existe' });
+  }
+
+  const total = Number(data.cantidad_total);
+  const disponible = Number(data.cantidad_disponible);
+  const prestadas = await countPrestadas(id);
+  if (total < prestadas) {
+    throw badRequest(`Hay ${prestadas} unidad(es) prestadas; la cantidad total no puede ser menor`, {
+      cantidad_total: `Mínimo ${prestadas} (unidades prestadas actualmente)`,
     });
-  } catch (error) {
-    console.error('Error al actualizar item:', error);
-    return NextResponse.json(
-      { error: 'Error al actualizar item' },
-      { status: 500 }
-    );
   }
-}
 
-// Eliminar un item (solo admin)
-export async function DELETE(req, context) {
-  try {
-    const session = await getSession();
-    console.log('API DELETE: Sesión actual:', JSON.stringify(session));
-    
-    // Comprobar si el usuario es administrador - verificar tanto 'role' como 'rol'
-    // para mayor compatibilidad
-    const isAdmin = session?.user && (
-      session.user.role === 'admin' || 
-      session.user.rol === 'admin' ||
-      session.user.email === 'superadmin@unphu.edu.do'
-    );
-    
-    console.log('API DELETE: ¿Es admin?', isAdmin);
-    console.log('API DELETE: Email de usuario:', session?.user?.email);
-    console.log('API DELETE: Rol de usuario:', session?.user?.role || session?.user?.rol);
-    
-    if (!session || !isAdmin) {
-      return NextResponse.json(
-        { error: 'No autorizado para eliminar items' },
-        { status: 401 }
-      );
-    }
-    
-    // Extraer el ID de los parámetros de contexto de manera asincrónica
-    const { id } = await context.params;
-    
-    // Verificar que el item existe
-    const items = await query(
-      'SELECT * FROM items WHERE id = ?',
-      [id]
-    );
-    
-    if (items.length === 0) {
-      return NextResponse.json(
-        { error: 'Item no encontrado' },
-        { status: 404 }
-      );
-    }
-    
-    // Verificar si el item tiene solicitudes activas (no finalizadas)
-    const solicitudesActivas = await query(
-      `SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND estado != 'Finalizada' AND estado != 'Rechazada'`,
-      [id]
-    );
-    
-    if (solicitudesActivas[0].count > 0) {
-      return NextResponse.json(
-        { error: 'No se puede eliminar un equipo con solicitudes activas asociadas' },
-        { status: 400 }
-      );
-    }
-    
-    // Verificar si hay solicitudes históricas (finalizadas o rechazadas)
-    const solicitudesHistoricas = await query(
-      `SELECT COUNT(*) as count FROM solicitudes WHERE item_id = ? AND (estado = 'Finalizada' OR estado = 'Rechazada')`,
-      [id]
-    );
-    
-    // Si hay solicitudes históricas, no eliminamos el equipo sino que lo marcamos como "Agotado"
-    // para mantener integridad referencial en el historial, ya que "Eliminado" no es un estado válido en la BD
-    if (solicitudesHistoricas[0].count > 0) {
-      console.log(`API DELETE: El item ${id} tiene ${solicitudesHistoricas[0].count} solicitudes históricas. Marcando como "Agotado" en lugar de borrar.`);
-      
-      await query(
-        `UPDATE items SET estado = 'Agotado', cantidad_disponible = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-        [id]
-      );
-      
-      return NextResponse.json({ 
-        message: 'Item marcado como agotado. Se mantiene en la base de datos para referencias históricas.',
-        status: 'soft_delete'
-      });
-    }
-    
-    // Si no tiene solicitudes, eliminamos el item completamente
-    await query('DELETE FROM items WHERE id = ?', [id]);
-    
-    // Revalidar las rutas afectadas
-    revalidatePath('/dashboard/admin/inventario');
-    revalidatePath('/dashboard');
-    
-    return NextResponse.json({ 
-      message: 'Item eliminado correctamente',
-      status: 'delete'
-    });
-  } catch (error) {
-    console.error('Error al eliminar item:', error);
-    return NextResponse.json(
-      { error: 'Error al eliminar item' },
-      { status: 500 }
-    );
+  let estado = data.estado;
+  if (estado !== 'En mantenimiento') estado = disponible > 0 ? 'Disponible' : 'Agotado';
+
+  await query(
+    `UPDATE items SET nombre = ?, descripcion = ?, departamento_id = ?, cantidad_total = ?,
+       cantidad_disponible = ?, estado = ? WHERE id = ?`,
+    [String(data.nombre).trim(), String(data.descripcion).trim(), Number(data.departamento_id), total, disponible, estado, id]
+  );
+  return ok({ message: 'Equipo actualizado correctamente', item: await findItem(id) });
+});
+
+// Si el equipo tiene historial se marca como agotado (baja lógica) para conservar los registros
+export const DELETE = handler(async (req, { params }) => {
+  await requireAdmin();
+  const id = parseId((await params).id);
+  await findItem(id);
+
+  const { activas } = await queryOne(
+    "SELECT COUNT(*) AS activas FROM solicitudes WHERE item_id = ? AND estado IN ('Pendiente', 'Aprobada')",
+    [id]
+  );
+  if (activas > 0) {
+    throw badRequest('No se puede eliminar un equipo con solicitudes pendientes o aprobadas');
   }
-}
+
+  const { historicas } = await queryOne('SELECT COUNT(*) AS historicas FROM solicitudes WHERE item_id = ?', [id]);
+  if (historicas > 0) {
+    await query("UPDATE items SET estado = 'Agotado', cantidad_disponible = 0 WHERE id = ?", [id]);
+    return ok({
+      message: 'El equipo tiene historial de solicitudes, así que se marcó como agotado en lugar de eliminarse',
+      status: 'soft_delete',
+    });
+  }
+
+  await query('DELETE FROM items WHERE id = ?', [id]);
+  return ok({ message: 'Equipo eliminado correctamente', status: 'delete' });
+});

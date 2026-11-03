@@ -1,58 +1,24 @@
-// src/app/api/auth/register/route.js
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
+import { handler, ok, readJson, badRequest } from '@/lib/server/http';
+import { hasErrors, firstError, normalizeMatricula, validateRegistro } from '@/lib/validation';
+import { INSTITUTION } from '@/lib/constants';
 
-export async function POST(req) {
-  try {
-    const body = await req.json();
-    const { matricula, nombre, apellido, password } = body;
-    
-    // Validaciones
-    if (!matricula || !nombre || !apellido || !password) {
-      return NextResponse.json(
-        { error: 'Todos los campos son obligatorios' },
-        { status: 400 }
-      );
-    }
-    
-    // Normalizar la matrícula a minúsculas
-    const formattedMatricula = matricula.toLowerCase().trim();
-    
-    // Crear email con formato institucional
-    const email = `${formattedMatricula}@unphu.edu.do`;
-    
-    // Verificar si el usuario ya existe (buscar de forma no sensible a mayúsculas/minúsculas)
-    const existingUsers = await query(
-      'SELECT * FROM usuarios WHERE LOWER(matricula) = ?',
-      [formattedMatricula]
-    );
-    
-    if (existingUsers.length > 0) {
-      return NextResponse.json(
-        { error: 'La matrícula ya está registrada' },
-        { status: 400 }
-      );
-    }
-    
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Guardar usuario en la base de datos
-    await query(
-      'INSERT INTO usuarios (matricula, email, nombre, apellido, password) VALUES (?, ?, ?, ?, ?)',
-      [formattedMatricula, email, nombre, apellido, hashedPassword]
-    );
-    
-    return NextResponse.json(
-      { message: 'Usuario registrado correctamente' },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Error al registrar usuario:', error);
-    return NextResponse.json(
-      { error: 'Error al registrar usuario' },
-      { status: 500 }
-    );
-  }
-}
+export const POST = handler(async (req) => {
+  const body = await readJson(req);
+  const errors = validateRegistro(body);
+  if (hasErrors(errors)) throw badRequest(firstError(errors), errors);
+
+  const matricula = normalizeMatricula(body.matricula);
+  const email = `${matricula}@${INSTITUTION.emailDomain}`;
+
+  const existing = await queryOne('SELECT id FROM usuarios WHERE LOWER(matricula) = ? OR LOWER(email) = ?', [matricula, email]);
+  if (existing) throw badRequest('Esta matrícula ya está registrada', { matricula: 'Esta matrícula ya está registrada' });
+
+  const hash = await bcrypt.hash(body.password, 10);
+  await query(
+    'INSERT INTO usuarios (matricula, email, nombre, apellido, password) VALUES (?, ?, ?, ?, ?)',
+    [matricula, email, body.nombre.trim(), body.apellido.trim(), hash]
+  );
+  return ok({ message: 'Usuario registrado correctamente' }, 201);
+});

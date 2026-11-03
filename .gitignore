@@ -45,3 +45,8 @@ next-env.d.ts
 /database/*.db
 /database/*.db-wal
 /database/*.db-shm
+
+# resultados de pruebas
+/playwright-report
+/test-results
+/coverage

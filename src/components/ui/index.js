@@ -1,0 +1,13 @@
+// Punto de entrada del sistema de diseño: import { Button, Card } from '@/components/ui';
+export { Button } from './Button';
+export { Card, CardHeader, CardBody, CardFooter } from './Card';
+export { Badge } from './Badge';
+export { Field, Input, PasswordInput, Select, Textarea, CharCount } from './Form';
+export { Modal } from './Modal';
+export { ConfirmDialog } from './ConfirmDialog';
+export { Alert, Spinner, PageLoader, Skeleton, EmptyState, ErrorState } from './Feedback';
+export { PageHeader, StatCard, ProgressBar, DescriptionList } from './Layout';
+export { DataTable } from './DataTable';
+export { FilterTabs, SearchInput } from './Filters';
+export { Logo, LogoMark, Avatar } from './Brand';
+export { ToastProvider, useToast } from './Toast';

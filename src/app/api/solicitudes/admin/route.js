@@ -1,48 +1,29 @@
-// src/app/api/solicitudes/admin/route.js
-import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
+import { handler, ok, requireAdmin } from '@/lib/server/http';
+import { SOLICITUD_SELECT, likePattern } from '@/lib/server/queries';
+import { isValidSolicitudEstado } from '@/lib/validation';
 
-// Obtener todas las solicitudes (solo admin)
-export async function GET(req) {
-  try {
-    const session = await getSession();
-    
-    if (!session || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-    
-    const { searchParams } = new URL(req.url);
-    const estado = searchParams.get('estado');
-    
-    let sql = `
-      SELECT s.*, i.nombre as item_nombre, d.nombre as departamento_nombre,
-      u.nombre as usuario_nombre, u.apellido as usuario_apellido, u.matricula
-      FROM solicitudes s
-      INNER JOIN items i ON s.item_id = i.id
-      INNER JOIN departamentos d ON i.departamento_id = d.id
-      INNER JOIN usuarios u ON s.usuario_id = u.id
-    `;
-    const params = [];
-    
-    if (estado) {
-      sql += ' WHERE s.estado = ?';
-      params.push(estado);
-    }
-    
-    sql += ' ORDER BY s.fecha_solicitud DESC';
-    
-    const solicitudes = await query(sql, params);
-    
-    return NextResponse.json(solicitudes);
-  } catch (error) {
-    console.error('Error al obtener solicitudes:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener solicitudes' },
-      { status: 500 }
-    );
+// Todas las solicitudes (solo administradores). Filtros: estado, q (equipo, usuario o matrícula)
+export const GET = handler(async (req) => {
+  await requireAdmin();
+  const { searchParams } = new URL(req.url);
+  const where = [];
+  const params = [];
+
+  const estado = searchParams.get('estado');
+  if (estado && isValidSolicitudEstado(estado)) {
+    where.push('s.estado = ?');
+    params.push(estado);
   }
-}
+  const q = searchParams.get('q')?.trim();
+  if (q) {
+    const pattern = likePattern(q);
+    where.push(`(i.nombre LIKE ? ESCAPE '\\' OR u.nombre LIKE ? ESCAPE '\\' OR u.apellido LIKE ? ESCAPE '\\'
+      OR u.matricula LIKE ? ESCAPE '\\' OR s.motivo LIKE ? ESCAPE '\\')`);
+    params.push(pattern, pattern, pattern, pattern, pattern);
+  }
+
+  const sql = `${SOLICITUD_SELECT} ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
+    ORDER BY CASE s.estado WHEN 'Pendiente' THEN 0 WHEN 'Aprobada' THEN 1 ELSE 2 END, s.fecha_solicitud DESC, s.id DESC`;
+  return ok(await query(sql, params));
+});

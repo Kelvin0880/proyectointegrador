@@ -1,23 +1,21 @@
-import Link from 'next/link';
+import { ArrowLeft, MapPinOff } from 'lucide-react';
+import { Button, LogoMark } from '@/components/ui';
+
+export const metadata = { title: 'Página no encontrada' };
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-green-50">
-      <div className="text-center py-10 px-6">
-        <h1 className="text-9xl font-bold text-green-700">404</h1>
-        <h2 className="text-2xl font-semibold text-gray-800 mt-4">Página no encontrada</h2>
-        <p className="text-gray-600 mt-4 mb-8">
-          Lo sentimos, la página que estás buscando no existe o ha sido movida.
-        </p>
-        <div className="mt-6">
-          <Link 
-            href="/" 
-            className="px-6 py-3 bg-green-700 text-white font-medium rounded-md hover:bg-green-600 transition-colors"
-          >
-            Volver al inicio
-          </Link>
-        </div>
-      </div>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
+      <LogoMark size={72} />
+      <span className="mt-8 flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+        <MapPinOff className="size-6" aria-hidden="true" />
+      </span>
+      <p className="mt-6 text-sm font-semibold uppercase tracking-wider text-brand-700">Error 404</p>
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Página no encontrada</h1>
+      <p className="mt-3 max-w-md text-slate-600">La dirección que buscas no existe o fue movida. Revisa el enlace o vuelve al inicio.</p>
+      <Button href="/" icon={ArrowLeft} className="mt-8">
+        Volver al inicio
+      </Button>
+    </main>
   );
 }

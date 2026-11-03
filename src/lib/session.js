@@ -1,10 +1,7 @@
+// Obtiene la sesión del usuario actual en componentes de servidor y rutas de la API.
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 
-/**
- * Función de utilidad para obtener la sesión del usuario actual en rutas API
- * @returns {Promise<Object|null>} La sesión del usuario o null si no está autenticado
- */
 export async function getSession() {
   try {
     return await getServerSession(authOptions);
